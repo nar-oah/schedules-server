@@ -1,12 +1,11 @@
 from fastapi import FastAPI, HTTPException, status
 
-from models import ScheduleCreate, ScheduleOrderMod, ScheduleOut
+from models import ScheduleCreate, ScheduleOut
 from service import (
     add_schedule,
     del_schedule,
     get_schedules,
     mod_schedule,
-    mod_schedule_order,
 )
 
 
@@ -28,14 +27,6 @@ def add_one_schedule(req: ScheduleCreate) -> ScheduleOut:
     if schedule is None:
         raise HTTPException(status_code=409, detail="schedule already exists")
     return schedule
-
-
-@app.put("/schedules/order", response_model=list[ScheduleOut])
-def mod_all_schedule_order(req: ScheduleOrderMod) -> list[ScheduleOut]:
-    schedules = mod_schedule_order(req.ids)
-    if schedules is None:
-        raise HTTPException(status_code=400, detail="ids must match all schedules")
-    return schedules
 
 
 @app.put("/schedules/{schedule_id}", response_model=ScheduleOut)

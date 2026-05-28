@@ -10,8 +10,7 @@ COLS = """
     schedule_description,
     duration_minutes,
     weekdays,
-    arrange_type,
-    sort_order
+    arrange_type
 """
 
 
@@ -24,14 +23,8 @@ def get_schedule_rows(
         SELECT {COLS}
         FROM schedules
         {where_sql}
-        ORDER BY sort_order, id
+        ORDER BY id
     """
     with conn.cursor(row_factory=class_row(ScheduleOut)) as cursor:
         cursor.execute(query, params)
         return list(cursor.fetchall())
-
-
-def get_schedule_ids(conn: Connection) -> list[int]:
-    with conn.cursor() as cursor:
-        cursor.execute("SELECT id FROM schedules ORDER BY sort_order, id")
-        return [row[0] for row in cursor.fetchall()]

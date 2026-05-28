@@ -1,7 +1,7 @@
 import psycopg
 from psycopg.rows import class_row
 
-from db import COLS, get_schedule_ids, get_schedule_rows
+from db import COLS, get_schedule_rows
 from models import ScheduleCreate, ScheduleOut
 
 
@@ -12,9 +12,6 @@ def get_schedules(calendar_name: str | None = None) -> list[ScheduleOut]:
 
 def add_schedule(req: ScheduleCreate) -> ScheduleOut | None:
     with psycopg.connect() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM schedules")
-            sort_order = cursor.fetchone()[0]
         with conn.cursor(row_factory=class_row(ScheduleOut)) as cursor:
             cursor.execute(
                 f"""
@@ -23,10 +20,9 @@ def add_schedule(req: ScheduleCreate) -> ScheduleOut | None:
                     schedule_description,
                     duration_minutes,
                     weekdays,
-                    arrange_type,
-                    sort_order
+                    arrange_type
                 )
-                VALUES (%s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s)
                 ON CONFLICT (calendar_name, schedule_description) DO NOTHING
                 RETURNING {COLS}
                 """,
@@ -36,7 +32,6 @@ def add_schedule(req: ScheduleCreate) -> ScheduleOut | None:
                     req.duration_minutes,
                     req.weekdays,
                     req.arrange_type,
-                    sort_order,
                 ),
             )
             return cursor.fetchone()
@@ -77,16 +72,3 @@ def del_schedule(schedule_id: int) -> ScheduleOut | None:
                 (schedule_id,),
             )
             return cursor.fetchone()
-
-
-def mod_schedule_order(ids: list[int]) -> list[ScheduleOut] | None:
-    with psycopg.connect() as conn:
-        current_ids = get_schedule_ids(conn)
-        if set(ids) != set(current_ids):
-            return None
-        with conn.cursor() as cursor:
-            cursor.executemany(
-                "UPDATE schedules SET sort_order = %s WHERE id = %s",
-                [(order, schedule_id) for order, schedule_id in enumerate(ids, 1)],
-            )
-        return get_schedule_rows(conn)

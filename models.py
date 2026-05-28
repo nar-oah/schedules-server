@@ -27,15 +27,3 @@ class ScheduleCreate(ScheduleBase):
 
 class ScheduleOut(ScheduleBase):
     id: int
-    sort_order: int
-
-
-class ScheduleOrderMod(BaseModel):
-    ids: list[int] = Field(min_length=1)
-
-    @field_validator("ids")
-    @classmethod
-    def get_unique_ids(cls, value: list[int]) -> list[int]:
-        if len(value) != len(set(value)):
-            raise ValueError("ids must be unique")
-        return value
